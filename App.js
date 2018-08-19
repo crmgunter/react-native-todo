@@ -51,7 +51,7 @@ export default class App extends Component {
     const newItems = this.state.items.filter((item) => {
       return item.key !== key
     })
-    this.setSource(newItems, newItems)
+    this.setSource(newItems, filterItems(this.state.filter, newItems))
   }
 
   handleToggleComplete(key, complete) {
@@ -75,7 +75,7 @@ export default class App extends Component {
       ... item,
       complete
     }))
-    this.setSource(newItems, newItems, { allComplete: complete })
+    this.setSource(newItems, filterItems(this.state.filter, newItems), { allComplete: complete })
   }
 
   handleAddItem() {
@@ -88,7 +88,7 @@ export default class App extends Component {
         complete: false
       }
     ]
-    this.setSource(newItems, newItems, { value: '' })
+    this.setSource(newItems, filterItems(this.state.filter, newItems), { value: '' })
   }
 
   render() {
