@@ -31,6 +31,8 @@ export default class App extends Component {
       items: [],
       dataSource: ds.cloneWithRows([])
     }
+    this.handleRemoveItem = this.handleRemoveItem.bind(this)
+    this.handleToggleComplete = this.handleToggleComplete.bind(this)
     this.handleFilter = this.handleFilter.bind(this)
     this.setSource = this.setSource.bind(this)
     this.handleAddItem = this.handleAddItem.bind(this)
@@ -43,6 +45,24 @@ export default class App extends Component {
       dataSource: this.state.dataSource.cloneWithRows(itemsDatasource),
       ...otherState
     })
+  }
+
+  handleRemoveItem(key) {
+    const newItems = this.state.items.filter((item) => {
+      return item.key !== key
+    })
+    this.setSource(newItems, newItems)
+  }
+
+  handleToggleComplete(key, complete) {
+    const newItems = this.state.items.map((item) => {
+      if (item.key !== key) return item
+      return {
+        ...item,
+        complete
+      }
+    })
+    this.setSource(newItems, filterItems(this.state.filter, newItems))
   }
 
   handleFilter(filter) {
@@ -90,6 +110,8 @@ export default class App extends Component {
             return (
               <Row
               key={key}
+              onRemove={() => this.handleRemoveItem(key)}
+              onComplete={(complete) => this.handleToggleComplete(key, complete)}
               {...value}
               />
             )
