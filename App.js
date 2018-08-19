@@ -6,24 +6,103 @@
  * @flow
  */
 
-import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View} from 'react-native';
+import React, { Component } from "react";
+import { Platform, StyleSheet, Text, View, ListView, Keyboard } from "react-native";
+import Header from "./Header";
+import Footer from "./Footer";
+import Row from './Rows'
 
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-  android:
-    'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
+const filterItems = (filter, items) => {
+  return items.filter((item) => {
+    if (filter === "ALL") return true;
+    if (filter === "COMPLETED") return item.complete;
+    if (filter === "ACTIVE") return !item.complete
+  })
+}
 
-type Props = {};
-export default class App extends Component<Props> {
+export default class App extends Component {
+  constructor(props) {
+    super(props)
+    const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2})
+    this.state = {
+      allComplete: false,
+      filter: "ALL",
+      value: '',
+      items: [],
+      dataSource: ds.cloneWithRows([])
+    }
+    this.handleFilter = this.handleFilter.bind(this)
+    this.setSource = this.setSource.bind(this)
+    this.handleAddItem = this.handleAddItem.bind(this)
+    this.handleToggleAllComplete = this.handleToggleAllComplete.bind(this)
+  }
+
+  setSource(items, itemsDatasource, otherState = {}) {
+    this.setState({
+      items,
+      dataSource: this.state.dataSource.cloneWithRows(itemsDatasource),
+      ...otherState
+    })
+  }
+
+  handleFilter(filter) {
+    this.setSource(this.state.items, filterItems(filter, this.state.items), { filter })
+  }
+  
+  handleToggleAllComplete() {
+    const complete = !this.state.allComplete
+    const newItems = this.state.items.map((item) => ({
+      ... item,
+      complete
+    }))
+    this.setSource(newItems, newItems, { allComplete: complete })
+  }
+
+  handleAddItem() {
+    if(!this.state.value) return;
+    const newItems = [
+      ...this.state.items,
+      {
+        key: Date.now(),
+        text: this.state.value,
+        complete: false
+      }
+    ]
+    this.setSource(newItems, newItems, { value: '' })
+  }
+
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>Welcome to React Native!</Text>
-        <Text style={styles.instructions}>To get started, edit App.js</Text>
-        <Text style={styles.instructions}>{instructions}</Text>
+        <Header 
+        value={this.state.value}
+        onChange={(value) => this.setState({ value })}
+        onAddItem={this.handleAddItem}
+        onToggleAllComplete={this.handleToggleAllComplete}
+        />
+        <View style={styles.content}>
+          <ListView 
+          style={styles.list}
+          enableEmptySections
+          dataSource={this.state.dataSource}
+          onScroll={() => Keyboard.dismiss()}
+          renderRow={({key, ...value}) => {
+            return (
+              <Row
+              key={key}
+              {...value}
+              />
+            )
+          }}
+          renderSeparator={(sectionId, rowId) => {
+            return <View key={rowId} style={styles.separator}/>
+          }}
+          />
+        </View>
+        <Footer 
+        onFilter={this.handleFilter}
+        filter={this.state.filter}
+        />
       </View>
     );
   }
@@ -32,18 +111,20 @@ export default class App extends Component<Props> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    backgroundColor: "#F5F5F5",
+    ... Platform.select({
+      ios: { paddingTop: 30 }
+    })
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+  content: {
+    flex: 1
   },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
+  list: {
+    backgroundColor: '#FFF'
   },
+  separator: {
+    borderWidth: 1,
+    borderColor: '#F5F5F5'
+  }
+  
 });
